@@ -1,0 +1,52 @@
+# .gitignore – Supernan Hindi Dubbing Pipeline
+
+# ── Intermediates & Outputs ───────────────────────────────────────────────────
+workspace/
+output/
+
+# ── Large model weights (download via setup.sh) ───────────────────────────────
+models/
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.pkl
+
+# ── Cloned repos (managed separately) ────────────────────────────────────────
+VideoReTalking/
+GFPGAN/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+
+# ── Input video (don't commit large files) ────────────────────────────────────
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wav
+*.mp3

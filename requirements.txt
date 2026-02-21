@@ -1,0 +1,49 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Supernan Hindi Dubbing Pipeline – Python Dependencies
+# Install with: pip install -r requirements.txt
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Core I/O & Media ──────────────────────────────────────────────────────────
+# ffmpeg is a system dependency — install via: sudo apt install ffmpeg
+# OR on Colab: !apt-get install -y ffmpeg
+
+# ── Transcription ─────────────────────────────────────────────────────────────
+openai-whisper>=20231117
+# Whisper requires ffmpeg to be available as a system command
+
+# ── Translation ───────────────────────────────────────────────────────────────
+# IndicTrans2 (primary — context-aware Hindi translation)
+transformers>=4.38.0
+sentencepiece>=0.1.99
+sacremoses
+# IndicTransTokenizer is installed separately (see setup.sh):
+#   pip install git+https://github.com/VarunGumma/IndicTransTokenizer.git
+
+# ── TTS / Voice Cloning ───────────────────────────────────────────────────────
+TTS>=0.22.0          # Coqui XTTS v2
+
+# ── Audio Processing ──────────────────────────────────────────────────────────
+pydub>=0.25.1        # Silence-based audio splitting
+librosa>=0.10.1      # Audio analysis & sync diagnostics
+soundfile>=0.12.1    # WAV I/O
+numpy>=1.24.0
+
+# ── Deep Learning Runtime ─────────────────────────────────────────────────────
+torch>=2.0.0         # PyTorch — install GPU version separately on Colab:
+                     # !pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+torchaudio>=2.0.0
+
+# ── Face Enhancement (GFPGAN) ─────────────────────────────────────────────────
+# GFPGAN and VideoReTalking are cloned as Git repos (see setup.sh)
+# Their Python deps:
+basicsr>=1.4.2
+facexlib>=0.3.0
+gfpgan>=1.3.8
+realesrgan>=0.3.0
+
+# ── Translation Fallback ──────────────────────────────────────────────────────
+deep-translator>=1.11.4   # Fallback: Google Translate (no API key needed)
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+tqdm>=4.66.0
+requests>=2.31.0
