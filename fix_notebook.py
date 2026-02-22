@@ -115,28 +115,45 @@ for cell in nb['cells']:
                 new_source.append(line)
         cell['source'] = new_source
     
+    # Check for Cell 10 (Stage 2 — Extract Audio)
+    if '# ── Cell 10: Stage 2 — Extract Audio' in source[0]:
+        new_source = []
+        new_source.append('# ── Cell 10: Stage 2 — Extract Audio ─────────────────────────────────────────\n')
+        new_source.append('import os\n')
+        new_source.append('if "CLIP" not in globals(): CLIP = "workspace/clip.mp4"\n')
+        for line in source:
+            if line.startswith('# ── Cell 10'): continue
+            new_source.append(line)
+        cell['source'] = new_source
+
+    # Check for Cell 11 (Stage 3 — Transcribe with Whisper)
+    if '# ── Cell 11: Stage 3 — Transcribe with Whisper' in source[0]:
+        new_source = []
+        new_source.append('# ── Cell 11: Stage 3 — Transcribe with Whisper ───────────────────────────────\n')
+        new_source.append('import os\n')
+        new_source.append('if "AUDIO_16K" not in globals(): AUDIO_16K = "workspace/clip_audio_16k.wav"\n')
+        for line in source:
+            if line.startswith('# ── Cell 11'): continue
+            new_source.append(line)
+        cell['source'] = new_source
+
     # Check for Cell 12 (IndicTrans2)
     if '# ── Cell 12: Stage 4 — Translate to Hindi (IndicTrans2)' in source[0]:
         new_source = []
         new_source.append('# ── Cell 12: Stage 4 — Translate to Hindi (IndicTrans2) ──────────────────────\n')
         new_source.append('import torch, os\n')
-        new_source.append('if "DEVICE" not in globals():\n')
-        new_source.append('    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n')
+        new_source.append('if "DEVICE" not in globals(): DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n')
         new_source.append('if "ENGLISH_TEXT" not in globals():\n')
         new_source.append('    if os.path.exists("workspace/transcript_en.txt"):\n')
         new_source.append('        with open("workspace/transcript_en.txt", "r") as f: ENGLISH_TEXT = f.read().strip()\n')
-        new_source.append('        print("✓ ENGLISH_TEXT recovered from disk")\n')
-        new_source.append('    else:\n')
-        new_source.append('        raise NameError("ENGLISH_TEXT not found! Please run Cell 11 first.")\n')
-        new_source.append('\n')
+        new_source.append('    else: raise NameError("ENGLISH_TEXT missing. Run Cell 11.")\n')
         for line in source:
             if line.startswith('# ── Cell 12'): continue
             line = line.replace('.cuda()', '.to(DEVICE)')
             line = line.replace(".to('cuda')", '.to(DEVICE)')
-            # Ensure HINDI_TEXT is defined with a default if translation fails
             if 'HINDI_TEXT =' in line and 'translate_indictrans2' in line:
                 new_source.append(line)
-                new_source.append('if HINDI_TEXT is None: HINDI_TEXT = "" # Ensure defined\n')
+                new_source.append('if HINDI_TEXT is None: HINDI_TEXT = "" # Define even if failed\n')
                 continue
             new_source.append(line)
         cell['source'] = new_source
@@ -148,24 +165,20 @@ for cell in nb['cells']:
         new_source.append('import os, re, torch\n')
         new_source.append('from TTS.api import TTS\n')
         new_source.append('\n')
-        new_source.append('# Robust device and text recovery\n')
-        new_source.append('if "DEVICE" not in globals():\n')
-        new_source.append('    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n')
+        new_source.append('# Global State Recovery\n')
+        new_source.append('if "DEVICE" not in globals(): DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n')
+        new_source.append('if "AUDIO_REF" not in globals(): AUDIO_REF = "workspace/clip_audio_ref44k.wav"\n')
         new_source.append('if "HINDI_TEXT" not in globals() or not HINDI_TEXT:\n')
         new_source.append('    if os.path.exists("workspace/translation_hi.txt"):\n')
         new_source.append('        with open("workspace/translation_hi.txt", "r", encoding="utf-8") as f: HINDI_TEXT = f.read().strip()\n')
-        new_source.append('        print("✓ HINDI_TEXT recovered from disk")\n')
-        new_source.append('    else:\n')
-        new_source.append('        raise NameError("HINDI_TEXT not found! Please run Cell 12 first.")\n')
+        new_source.append('    else: raise NameError("HINDI_TEXT missing. Run Cell 12.")\n')
         new_source.append('\n')
-        new_source.append('# Fix for PyTorch 2.6+ UnpicklingError - Allowlist Coqui config classes\n')
+        new_source.append('# Fix for PyTorch 2.6+ Unpickling\n')
         new_source.append('try:\n')
         new_source.append('    from TTS.tts.configs.xtts_config import XttsConfig\n')
         new_source.append('    import torch.serialization\n')
         new_source.append('    torch.serialization.add_safe_globals([XttsConfig])\n')
-        new_source.append('except ImportError: pass\n')
-        new_source.append('\n')
-        new_source.append('# Fallback monkeypatch if add_safe_globals isn\'t enough\n')
+        new_source.append('except: pass\n')
         new_source.append('if not hasattr(torch.load, "__supernan_patch__"):\n')
         new_source.append('    orig_load = torch.load\n')
         new_source.append('    def zipped_load(*args, **kwargs):\n')
@@ -173,30 +186,36 @@ for cell in nb['cells']:
         new_source.append('        return orig_load(*args, **kwargs)\n')
         new_source.append('    zipped_load.__supernan_patch__ = True\n')
         new_source.append('    torch.load = zipped_load\n')
-        new_source.append('\n')
-        new_source.append('# Auto-accept Coqui CPML license\n')
         new_source.append('os.environ["COQUI_TOS_AGREED"] = "1"\n')
-        new_source.append('\n')
         new_source.append('TTS_RAW = "workspace/tts_raw.wav"\n')
         
-        # Keep the rest of the logic
         start_appending = False
         for line in source:
-            if "print('Loading Coqui XTTS v2...')" in line:
-                start_appending = True
-            if start_appending:
-                new_source.append(line)
+            if "print('Loading Coqui XTTS v2...')" in line: start_appending = True
+            if start_appending: new_source.append(line)
         cell['source'] = new_source
 
     # Check for Cell 14 (Speed Adjust)
     if '# ── Cell 14: Stage 6 — Adjust Audio Speed' in source[0]:
-        cell['source'] = fix_cell_14(source)
+        new_source = fix_cell_14(source)
+        # Ensure CLIP and TTS_RAW are defined
+        vars_to_add = [
+            'if "CLIP" not in globals(): CLIP = "workspace/clip.mp4"\n',
+            'if "TTS_RAW" not in globals(): TTS_RAW = "workspace/tts_raw.wav"\n'
+        ]
+        for v in reversed(vars_to_add):
+            if v not in new_source: new_source.insert(2, v)
+        cell['source'] = new_source
 
     # Check for Cell 15 (VideoReTalking)
     if '# ── Cell 15: Stage 7 — VideoReTalking Lip Sync' in source[0]:
         new_source = []
         new_source.append('# ── Cell 15: Stage 7 — VideoReTalking Lip Sync ───────────────────────────────\n')
         new_source.append('import sys, os, subprocess\n')
+        new_source.append('\n')
+        new_source.append('# Global State Recovery\n')
+        new_source.append('if "CLIP" not in globals(): CLIP = "workspace/clip.mp4"\n')
+        new_source.append('if "TTS_ADJ" not in globals(): TTS_ADJ = "workspace/tts_adjusted.wav"\n')
         new_source.append('\n')
         new_source.append('# Path fix for VideoReTalking third_part modules\n')
         new_source.append('VRT_PATH = os.path.abspath("VideoReTalking")\n')
