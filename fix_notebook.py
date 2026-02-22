@@ -6,85 +6,17 @@ notebook_path = '/Users/vikashkumar/Desktop/Supernan/supernan_dubbing.ipynb'
 with open(notebook_path, 'r') as f:
     nb = json.load(f)
 
-def fix_cell_14(source):
-    new_source = []
-    new_source.append('# ── Cell 14: Stage 6 — Adjust Audio Speed ────────────────────────────────────\n')
-    new_source.append('import subprocess, os\n')
-    new_source.append('\n')
-    new_source.append('TTS_ADJ = "workspace/tts_adjusted.wav"\n')
-    new_source.append('\n')
-    new_source.append('def get_duration(path):\n')
-    new_source.append('    if not os.path.exists(path): return 0.0\n')
-    new_source.append('    r = subprocess.run(["ffprobe","-v","quiet","-show_entries","format=duration","-of","csv=p=0",path],\n')
-    new_source.append('                       capture_output=True, text=True)\n')
-    new_source.append('    try: return float(r.stdout.strip())\n')
-    new_source.append('    except: return 0.0\n')
-    new_source.append('\n')
-    new_source.append('def build_atempo(ratio):\n')
-    new_source.append('    filters = []\n')
-    new_source.append('    r = ratio\n')
-    new_source.append('    while r < 0.5: filters.append("atempo=0.5"); r /= 0.5\n')
-    new_source.append('    while r > 2.0: filters.append("atempo=2.0"); r /= 2.0\n')
-    new_source.append('    filters.append(f"atempo={r:.6f}")\n')
-    new_source.append('    return ",".join(filters)\n')
-    new_source.append('\n')
-    new_source.append('tts_dur = get_duration(TTS_RAW)\n')
-    new_source.append('clip_dur = get_duration(CLIP)\n')
-    new_source.append('if tts_dur > 0 and clip_dur > 0:\n')
-    new_source.append('    ratio = tts_dur / clip_dur\n')
-    new_source.append('    atempo = build_atempo(ratio)\n')
-    new_source.append('    print(f"TTS duration: {tts_dur:.2f}s | Clip duration: {clip_dur:.2f}s | ratio={ratio:.3f}")\n')
-    new_source.append('    # Speed match + Duration Guard (ensure exactly clip_dur seconds)\n')
-    new_source.append('    get_ipython().system(f"ffmpeg -y -i {TTS_RAW} -filter:a \'{atempo},apad\' -t {clip_dur} -ar 44100 {TTS_ADJ} -loglevel warning")\n')
-    new_source.append('    print(f"✓ Audio adjusted and padded to {clip_dur:.2f}s")\n')
-    new_source.append('else:\n')
-    new_source.append('    print("⚠️ Skipping speed adjustment (missing audio files)")\n')
-    return new_source
-
-def fix_cell_16(source):
-    new_source = []
-    new_source.append('# ── Cell 16: Stage 8 — GFPGAN Face Enhancement ───────────────────────────────\n')
-    new_source.append('SKIP_ENHANCEMENT = False  # Set to True to skip this slow stage and get output immediately\n')
-    new_source.append('FINAL = "output/final_dubbed.mp4"\n')
-    new_source.append('FRAMES_DIR = "workspace/frames_raw"\n')
-    new_source.append('ENHANCED_DIR = "workspace/gfpgan_out"\n')
-    new_source.append('\n')
-    new_source.append('import os, subprocess, torch\n')
-    new_source.append('\n')
-    new_source.append('if SKIP_ENHANCEMENT:\n')
-    new_source.append('    print("\u23e9 SKIP_ENHANCEMENT is True. Copying lip-sync video to final output...")\n')
-    new_source.append('    get_ipython().system(f"cp {LIPSYNC} {FINAL}")\n')
-    new_source.append('    print(f"\u2713 Final output (no enhancement): {FINAL}")\n')
-    new_source.append('else:\n')
-    new_source.append('    os.makedirs(FRAMES_DIR, exist_ok=True)\n')
-    new_source.append('    print("Extracting frames...")\n')
-    new_source.append('    get_ipython().system(f"ffmpeg -y -i {LIPSYNC} -qscale:v 1 -qmin 1 {FRAMES_DIR}/frame_%06d.png -loglevel warning")\n')
-    new_source.append('\n')
-    new_source.append('    print("Running GFPGAN face restoration...")\n')
-    new_source.append('    if torch.cuda.is_available():\n')
-    new_source.append('        PROCESSOR = "cuda"\n')
-    new_source.append('    elif torch.backends.mps.is_available():\n')
-    new_source.append('        PROCESSOR = "mps"\n')
-    new_source.append('    else:\n')
-    new_source.append('        PROCESSOR = "cpu"\n')
-    new_source.append('    print(f"Device detected: {PROCESSOR}")\n')
-    new_source.append('    get_ipython().system(f"python GFPGAN/inference_gfpgan.py --ext png --device {PROCESSOR} -i {FRAMES_DIR} -o {ENHANCED_DIR} -v 1.4 -s 1 --bg_upsampler None")\n')
-    new_source.append('\n')
-    new_source.append('    fps_r = subprocess.run(["ffprobe","-v","quiet","-select_streams","v:0",\n')
-    new_source.append('                            "-show_entries","stream=r_frame_rate","-of","csv=p=0", LIPSYNC],\n')
-    new_source.append('                           capture_output=True, text=True)\n')
-    new_source.append('    FPS = fps_r.stdout.strip()\n')
-    new_source.append('\n')
-    new_source.append('    RESTORED = f"{ENHANCED_DIR}/restored_imgs"\n')
-    new_source.append('    print("Re-encoding final video...")\n')
-    new_source.append('    get_ipython().system(f"ffmpeg -y -framerate {FPS} -pattern_type glob -i \'{RESTORED}/*.png\' -i {LIPSYNC} -map 0:v -map 1:a -c:v libx264 -crf 17 -preset slow -c:a aac -shortest {FINAL} -loglevel warning")\n')
-    new_source.append('\n')
-    new_source.append('    final_dur = get_duration(FINAL)\n')
-    new_source.append('    print(f"✓ Final output: {FINAL} ({final_dur:.2f}s)")\n')
-    new_source.append('\n')
-    new_source.append('from IPython.display import Video\n')
-    new_source.append('Video(FINAL, width=640)\n')
-    return new_source
+def get_duration_code():
+    return [
+        'import subprocess, os\n',
+        'def get_duration(path):\n',
+        '    if not os.path.exists(path): return 0.0\n',
+        '    r = subprocess.run(["ffprobe","-v","quiet","-show_entries","format=duration","-of","csv=p=0",path],\n',
+        '                       capture_output=True, text=True)\n',
+        '    try: return float(r.stdout.strip())\n',
+        '    except: return 0.0\n',
+        '\n'
+    ]
 
 for cell in nb['cells']:
     if cell['cell_type'] != 'code':
@@ -94,200 +26,195 @@ for cell in nb['cells']:
     if not source:
         continue
     
-    # Check for Cell 3 (Install Python packages)
-    if '# ── Cell 3: Install Python packages' in source[0]:
-        new_source = []
-        for line in source:
-            if 'IndicTransTokenizer.git' in line and '@main' not in line:
-                new_source.append(line.replace('IndicTransTokenizer.git', 'IndicTransTokenizer.git@main'))
-            else:
-                # Cleanup potential duplicates if they already exist
-                if '@main@main' in line: line = line.replace('@main@main', '@main')
-                new_source.append(line)
-        cell['source'] = new_source
+    header = source[0]
 
-    # Check for Cell 5 (VideoReTalking weights)
-    if '# ── Cell 5: Download VideoReTalking Weights' in source[0]:
-        new_source = []
-        for line in source:
-            if '!unzip -q' in line and '-qo' not in line:
-                new_source.append(line.replace('!unzip -q', '!unzip -qo'))
-            else:
-                # Cleanup potential duplicates if they already exist
-                if '-qo' in line: line = line.replace('-qo', '-qo').replace('-qoooo', '-qo')
-                new_source.append(line)
-        cell['source'] = new_source
-    
-    # Check for Cell 10 (Stage 2 — Extract Audio)
-    if '# ── Cell 10: Stage 2 — Extract Audio' in source[0]:
-        new_source = []
-        new_source.append('# ── Cell 10: Stage 2 — Extract Audio ─────────────────────────────────────────\n')
-        new_source.append('import os\n')
-        new_source.append('if "CLIP" not in globals(): CLIP = "workspace/clip.mp4"\n')
-        for line in source:
-            if line.startswith('# ── Cell 10'): continue
-            new_source.append(line)
-        cell['source'] = new_source
-
-    # Check for Cell 11 (Stage 3 — Transcribe with Whisper)
-    if '# ── Cell 11: Stage 3 — Transcribe with Whisper' in source[0]:
-        new_source = []
-        new_source.append('# ── Cell 11: Stage 3 — Transcribe with Whisper ───────────────────────────────\n')
-        new_source.append('import os\n')
-        new_source.append('if "AUDIO_16K" not in globals(): AUDIO_16K = "workspace/clip_audio_16k.wav"\n')
-        for line in source:
-            if line.startswith('# ── Cell 11'): continue
-            new_source.append(line)
-        cell['source'] = new_source
-
-    # Check for Cell 12 (IndicTrans2)
-    if '# ── Cell 12: Stage 4 — Translate to Hindi (IndicTrans2)' in source[0]:
-        new_source = []
-        new_source.append('# ── Cell 12: Stage 4 — Translate to Hindi (IndicTrans2) ──────────────────────\n')
-        new_source.append('import torch, os\n')
-        new_source.append('if "DEVICE" not in globals(): DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n')
-        new_source.append('if "ENGLISH_TEXT" not in globals():\n')
-        new_source.append('    if os.path.exists("workspace/transcript_en.txt"):\n')
-        new_source.append('        with open("workspace/transcript_en.txt", "r") as f: ENGLISH_TEXT = f.read().strip()\n')
-        new_source.append('    else: raise NameError("ENGLISH_TEXT missing. Run Cell 11.")\n')
-        for line in source:
-            if line.startswith('# ── Cell 12'): continue
-            line = line.replace('.cuda()', '.to(DEVICE)')
-            line = line.replace(".to('cuda')", '.to(DEVICE)')
-            if 'HINDI_TEXT =' in line and 'translate_indictrans2' in line:
-                new_source.append('print("Attempting Hindi translation...")\n')
-                new_source.append(line)
-                new_source.append('if not HINDI_TEXT:\n')
-                new_source.append('    print("⚠️ IndicTrans2 failed. Attempting Google Translate fallback...")\n')
-                new_source.append('    try:\n')
-                new_source.append('        from deep_translator import GoogleTranslator\n')
-                new_source.append('        HINDI_TEXT = GoogleTranslator(source="en", target="hi").translate(ENGLISH_TEXT)\n')
-                new_source.append('        print("✓ Google Translate success!")\n')
-                new_source.append('    except Exception as ge:\n')
-                new_source.append('        print(f"❌ Google Translate failed: {ge}. Using English as last resort.")\n')
-                new_source.append('        HINDI_TEXT = ENGLISH_TEXT\n')
-                new_source.append('with open("workspace/translation_hi.txt", "w", encoding="utf-8") as f: f.write(HINDI_TEXT)\n')
-                continue
-            
-            # Skip old redundant checks
-            if any(x in line for x in ['if not HINDI_TEXT:', 'Using English text for now', 'Define even if failed']):
-                continue
-            new_source.append(line)
-        cell['source'] = new_source
-
-    # Check for Cell 13 (XTTS)
-    if '# ── Cell 13: Stage 5 — Coqui XTTS v2 Voice Cloning' in source[0]:
-        new_source = []
-        new_source.append('# ── Cell 13: Stage 5 — Coqui XTTS v2 Voice Cloning ──────────────────────────\n')
-        new_source.append('import os, re, torch\n')
-        new_source.append('from TTS.api import TTS\n')
-        new_source.append('\n')
-        new_source.append('# Global State Recovery & Guards\n')
-        new_source.append('if "DEVICE" not in globals(): DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n')
-        new_source.append('if "AUDIO_REF" not in globals(): AUDIO_REF = "workspace/clip_audio_ref44k.wav"\n')
-        new_source.append('if "HINDI_TEXT" not in globals() or not HINDI_TEXT.strip():\n')
-        new_source.append('    if os.path.exists("workspace/translation_hi.txt"):\n')
-        new_source.append('        with open("workspace/translation_hi.txt", "r", encoding="utf-8") as f: HINDI_TEXT = f.read().strip()\n')
-        new_source.append('    if not HINDI_TEXT.strip():\n')
-        new_source.append('        if "ENGLISH_TEXT" in globals() and ENGLISH_TEXT: HINDI_TEXT = ENGLISH_TEXT\n')
-        new_source.append('        else: raise ValueError("HINDI_TEXT is empty and no fallback found. Run Cell 11/12.")\n')
-        new_source.append('\n')
-        new_source.append('# Fix for PyTorch 2.6+ Unpickling\n')
-        new_source.append('try:\n')
-        new_source.append('    from TTS.tts.configs.xtts_config import XttsConfig\n')
-        new_source.append('    import torch.serialization\n')
-        new_source.append('    torch.serialization.add_safe_globals([XttsConfig])\n')
-        new_source.append('except: pass\n')
-        new_source.append('if not hasattr(torch.load, "__supernan_patch__"):\n')
-        new_source.append('    orig_load = torch.load\n')
-        new_source.append('    def zipped_load(*args, **kwargs):\n')
-        new_source.append('        if "weights_only" not in kwargs: kwargs["weights_only"] = False\n')
-        new_source.append('        return orig_load(*args, **kwargs)\n')
-        new_source.append('    zipped_load.__supernan_patch__ = True\n')
-        new_source.append('    torch.load = zipped_load\n')
-        new_source.append('os.environ["COQUI_TOS_AGREED"] = "1"\n')
-        new_source.append('TTS_RAW = "workspace/tts_raw.wav"\n')
-        
-        start_appending = False
-        for line in source:
-            if "print('Loading Coqui XTTS v2...')" in line: start_appending = True
-            if start_appending: new_source.append(line)
-        cell['source'] = new_source
-
-    # Check for Cell 14 (Speed Adjust)
-    if '# ── Cell 14: Stage 6 — Adjust Audio Speed' in source[0]:
-        new_source = fix_cell_14(source)
-        # Ensure CLIP and TTS_RAW are defined
-        vars_to_add = [
-            'if "CLIP" not in globals(): CLIP = "workspace/clip.mp4"\n',
-            'if "TTS_RAW" not in globals(): TTS_RAW = "workspace/tts_raw.wav"\n'
+    # ── Cell 3: Install Packages ──
+    if '# ── Cell 3: Install Python packages' in header:
+        cell['source'] = [
+            '# ── Cell 3: Install Python packages ──────────────────────────────────────────\n',
+            '# PyTorch with CUDA (Colab default, but ensuring compatibility)\n',
+            '!pip install -q torch torchaudio --index-url https://download.pytorch.org/whl/cu118\n',
+            '\n',
+            '# Core pipeline deps\n',
+            '!pip install -q openai-whisper TTS transformers sentencepiece sacremoses\n',
+            '!pip install -q git+https://github.com/VarunGumma/IndicTransTokenizer.git\n',
+            '!pip install -q pydub librosa soundfile deep-translator\n',
+            '!pip install -q basicsr facexlib gfpgan realesrgan\n',
+            'print("✓ All packages installed")\n'
         ]
-        for v in reversed(vars_to_add):
-            if v not in new_source: new_source.insert(2, v)
-        cell['source'] = new_source
 
-    # Check for Cell 15 (VideoReTalking)
-    if '# ── Cell 15: Stage 7 — VideoReTalking Lip Sync' in source[0]:
-        new_source = []
-        new_source.append('# ── Cell 15: Stage 7 — VideoReTalking Lip Sync ───────────────────────────────\n')
-        new_source.append('import sys, os, subprocess\n')
-        new_source.append('\n')
-        new_source.append('# Global State Recovery\n')
-        new_source.append('if "CLIP" not in globals(): CLIP = "workspace/clip.mp4"\n')
-        new_source.append('if "TTS_ADJ" not in globals(): TTS_ADJ = "workspace/tts_adjusted.wav"\n')
-        new_source.append('\n')
-        new_source.append('# Path fix for VideoReTalking third_part modules\n')
-        new_source.append('VRT_PATH = os.path.abspath("VideoReTalking")\n')
-        new_source.append('if VRT_PATH not in sys.path: sys.path.append(VRT_PATH)\n')
-        new_source.append('TP_PATH = os.path.join(VRT_PATH, "third_part")\n')
-        new_source.append('if TP_PATH not in sys.path: sys.path.append(TP_PATH)\n')
-        new_source.append('F3D_PATH = os.path.join(TP_PATH, "face3d")\n')
-        new_source.append('if F3D_PATH not in sys.path: sys.path.append(F3D_PATH)\n')
-        new_source.append('\n')
-        new_source.append('LIPSYNC = "workspace/lipsync.mp4"\n')
-        new_source.append('CHECKPOINT_DIR = "models/VideoReTalking"\n')
-        new_source.append('\n')
-        new_source.append('print("Running VideoReTalking (this takes ~10-20 min on free T4)...")\n')
-        new_source.append('result = subprocess.run(\n')
-        new_source.append('    [sys.executable, "VideoReTalking/inference.py",\n')
-        new_source.append('     "--face", CLIP,\n')
-        new_source.append('     "--audio", TTS_ADJ,\n')
-        new_source.append('     "--outfile", LIPSYNC,\n')
-        new_source.append('     "--checkpoint_dir", CHECKPOINT_DIR],\n')
-        new_source.append('    cwd="."\n')
-        new_source.append(')\n')
-        new_source.append('\n')
-        new_source.append('if result.returncode != 0:\n')
-        new_source.append('    print("⚠️ VideoReTalking failed. Falling back to simple audio mux...")\n')
-        new_source.append('    if os.path.exists(TTS_ADJ):\n')
-        new_source.append('        get_ipython().system(f"ffmpeg -y -i {CLIP} -i {TTS_ADJ} -map 0:v -map 1:a -c:v copy -c:a aac -shortest {LIPSYNC} -loglevel warning")\n')
-        new_source.append('    else:\n')
-        new_source.append('        print("⚠️ Missing TTS_ADJ, using original clip.")\n')
-        new_source.append('        get_ipython().system(f"cp {CLIP} {LIPSYNC}")\n')
-        new_source.append('\n')
-        new_source.append('from IPython.display import Video\n')
-        new_source.append('Video(LIPSYNC, width=640, embed=True)\n')
-        cell['source'] = new_source
+    # ── Cell 5: Download Weights ──
+    elif '# ── Cell 5: Download VideoReTalking Weights' in header:
+        cell['source'] = [
+            '# ── Cell 5: Download VideoReTalking Weights ──────────────────────────────────\n',
+            'import os\n',
+            'os.makedirs("models/VideoReTalking", exist_ok=True)\n',
+            '!wget -q https://github.com/vinthony/video-retalking/releases/download/v0.0.1/30_net_G.pth -O models/VideoReTalking/30_net_G.pth\n',
+            '!wget -q https://github.com/vinthony/video-retalking/releases/download/v0.0.1/BFM.zip -O models/VideoReTalking/BFM.zip\n',
+            '!unzip -qo models/VideoReTalking/BFM.zip -d models/VideoReTalking/\n',
+            'print("✓ VideoReTalking weights ready")\n'
+        ]
 
-    # Check for Cell 16 (GFPGAN)
-    if '# ── Cell 16: Stage 8 — GFPGAN Face Enhancement' in source[0]:
-        cell['source'] = fix_cell_16(source)
+    # ── Cell 10: Extract Audio ──
+    elif '# ── Cell 10: Stage 2 — Extract Audio' in header:
+        cell['source'] = [
+            '# ── Cell 10: Stage 2 — Extract Audio ─────────────────────────────────────────\n',
+            'import os\n',
+            'if "CLIP" not in globals(): CLIP = "workspace/clip.mp4"\n',
+            'AUDIO_RAW = "workspace/clip_audio.wav"\n',
+            'AUDIO_16K = "workspace/clip_audio_16k.wav"\n',
+            'AUDIO_REF = "workspace/clip_audio_ref44k.wav"\n',
+            '\n',
+            'print("Extracting audio tracks...")\n',
+            '# 1. Raw audio\n',
+            'get_ipython().system(f"ffmpeg -y -i {CLIP} -vn -acodec pcm_s16le -ar 44100 {AUDIO_RAW} -loglevel warning")\n',
+            '# 2. 16k for Whisper\n',
+            'get_ipython().system(f"ffmpeg -y -i {AUDIO_RAW} -ac 1 -ar 16000 {AUDIO_16K} -loglevel warning")\n',
+            '# 3. 44k Reference for XTTS\n',
+            'get_ipython().system(f"ffmpeg -y -i {AUDIO_RAW} -ac 1 -ar 44100 {AUDIO_REF} -loglevel warning")\n',
+            'print("✓ Audio extracted (Raw, 16k, 44k Ref)")\n'
+        ]
 
-    # Check for Cell 17 (Download)
-    if '# ── Cell 17: Download Output' in source[0]:
-        new_source = []
-        new_source.append('# ── Cell 17: Download Output ──────────────────────────────────────────────────\n')
-        new_source.append('import os\n')
-        new_source.append('try:\n')
-        new_source.append('    from google.colab import files\n')
-        new_source.append('    files.download(FINAL)\n')
-        new_source.append('    print(f"✓ Download started for {FINAL}")\n')
-        new_source.append('except ImportError:\n')
-        new_source.append('    print(f"✓ Output saved to: {os.path.abspath(FINAL)}")\n')
-        new_source.append('    print("   (Local machine detected, skipping browser download)")\n')
-        cell['source'] = new_source
+    # ── Cell 12: Translation ──
+    elif '# ── Cell 12: Stage 4 — Translate to Hindi (IndicTrans2)' in header:
+        cell['source'] = [
+            '# ── Cell 12: Stage 4 — Translate to Hindi (IndicTrans2) ──────────────────────\n',
+            'import torch, os\n',
+            'if "DEVICE" not in globals(): DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n',
+            'if "ENGLISH_TEXT" not in globals():\n',
+            '    if os.path.exists("workspace/transcript_en.txt"):\n',
+            '        with open("workspace/transcript_en.txt", "r") as f: ENGLISH_TEXT = f.read().strip()\n',
+            '        print("✓ ENGLISH_TEXT recovered from disk")\n',
+            '    else: raise NameError("ENGLISH_TEXT missing. Run Cell 11.")\n',
+            '\n',
+            'def translate_indictrans2(text):\n',
+            '    try:\n',
+            '        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer\n',
+            '        from IndicTransTokenizer import IndicProcessor\n',
+            '        MODEL = "ai4bharat/indictrans2-en-indic-1B"\n',
+            '        print("Loading IndicTrans2...")\n',
+            '        tokenizer = AutoTokenizer.from_pretrained(MODEL, trust_remote_code=True)\n',
+            '        model = AutoModelForSeq2SeqLM.from_pretrained(MODEL, trust_remote_code=True).to(DEVICE)\n',
+            '        ip = IndicProcessor(inference=True)\n',
+            '        sentences = [s.strip() for s in text.split(".") if s.strip()]\n',
+            '        batch = ip.preprocess_batch(sentences, src_lang="eng_Latn", tgt_lang="hin_Deva")\n',
+            '        inputs = tokenizer(batch, truncation=True, padding="longest", return_tensors="pt").to(DEVICE)\n',
+            '        with torch.no_grad():\n',
+            '            outputs = model.generate(**inputs, num_beams=5, max_length=256)\n',
+            '        decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)\n',
+            '        postprocessed = ip.postprocess_batch(decoded, lang="hin_Deva")\n',
+            '        return " ".join(postprocessed)\n',
+            '    except Exception as e:\n',
+            '        print(f"IndicTrans2 failed: {e}")\n',
+            '        return None\n',
+            '\n',
+            'print("Attempting Hindi translation...")\n',
+            'HINDI_TEXT = translate_indictrans2(ENGLISH_TEXT)\n',
+            '\n',
+            'if not HINDI_TEXT:\n',
+            '    print("⚠️ IndicTrans2 failed. Attempting Google Translate fallback...")\n',
+            '    try:\n',
+            '        from deep_translator import GoogleTranslator\n',
+            '        HINDI_TEXT = GoogleTranslator(source="en", target="hi").translate(ENGLISH_TEXT)\n',
+            '        print("✓ Google Translate success!")\n',
+            '    except Exception as ge:\n',
+            '        print(f"❌ Google Translate failed: {ge}. Using English as last resort.")\n',
+            '        HINDI_TEXT = ENGLISH_TEXT\n',
+            '\n',
+            'with open("workspace/translation_hi.txt", "w", encoding="utf-8") as f: f.write(HINDI_TEXT)\n',
+            'print(f"✓ Hindi translation completed.")\n',
+            'print(f"Text: {HINDI_TEXT[:100]}...")\n'
+        ]
+
+    # ── Cell 13: Voice Cloning ──
+    elif '# ── Cell 13: Stage 5 — Coqui XTTS v2 Voice Cloning' in header:
+        cell['source'] = [
+            '# ── Cell 13: Stage 5 — Coqui XTTS v2 Voice Cloning ──────────────────────────\n',
+            'import os, re, torch\n',
+            'from TTS.api import TTS\n',
+            '\n',
+            '# Recovery & Guards\n',
+            'if "DEVICE" not in globals(): DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n',
+            'if "AUDIO_REF" not in globals(): AUDIO_REF = "workspace/clip_audio_ref44k.wav"\n',
+            'if "HINDI_TEXT" not in globals() or not HINDI_TEXT.strip():\n',
+            '    if os.path.exists("workspace/translation_hi.txt"):\n',
+            '        with open("workspace/translation_hi.txt", "r", encoding="utf-8") as f: HINDI_TEXT = f.read().strip()\n',
+            '    if not globals().get("HINDI_TEXT"):\n',
+            '        if "ENGLISH_TEXT" in globals(): HINDI_TEXT = ENGLISH_TEXT\n',
+            '        else: raise ValueError("HINDI_TEXT empty and no fallback found.")\n',
+            '\n',
+            '# PyTorch 2.6 Fix\n',
+            'try:\n',
+            '    from TTS.tts.configs.xtts_config import XttsConfig\n',
+            '    torch.serialization.add_safe_globals([XttsConfig])\n',
+            'except: pass\n',
+            '\n',
+            'os.environ["COQUI_TOS_AGREED"] = "1"\n',
+            'TTS_RAW = "workspace/tts_raw.wav"\n',
+            '\n',
+            'print("Loading Coqui XTTS v2...")\n',
+            'tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(DEVICE)\n',
+            '\n',
+            'print(f"Synthesizing Hindi audio...")\n',
+            'tts.tts_to_file(text=HINDI_TEXT, speaker_wav=AUDIO_REF, language="hi", file_path=TTS_RAW)\n',
+            'print(f"✓ Synthesized: {TTS_RAW}")\n'
+        ]
+
+    # ── Cell 14: Speed Adjust ──
+    elif '# ── Cell 14: Stage 6 — Adjust Audio Speed' in header:
+        cell['source'] = [
+            '# ── Cell 14: Stage 6 — Adjust Audio Speed ────────────────────────────────────\n',
+        ] + get_duration_code() + [
+            'if "CLIP" not in globals(): CLIP = "workspace/clip.mp4"\n',
+            'if "TTS_RAW" not in globals(): TTS_RAW = "workspace/tts_raw.wav"\n',
+            'TTS_ADJ = "workspace/tts_adjusted.wav"\n',
+            '\n',
+            'def build_atempo(ratio):\n',
+            '    filters = []\n',
+            '    r = ratio\n',
+            '    while r < 0.5: filters.append("atempo=0.5"); r /= 0.5\n',
+            '    while r > 2.0: filters.append("atempo=2.0"); r /= 2.0\n',
+            '    filters.append(f"atempo={r:.6f}")\n',
+            '    return ",".join(filters)\n',
+            '\n',
+            'tts_dur = get_duration(TTS_RAW)\n',
+            'clip_dur = get_duration(CLIP)\n',
+            '\n',
+            'if tts_dur > 0 and clip_dur > 0:\n',
+            '    ratio = tts_dur / clip_dur\n',
+            '    atempo = build_atempo(ratio)\n',
+            '    print(f"Adjusting speed (ratio: {ratio:.3f})...")\n',
+            '    get_ipython().system(f"ffmpeg -y -i {TTS_RAW} -filter:a \'{atempo},apad\' -t {clip_dur} -ar 44100 {TTS_ADJ} -loglevel warning")\n',
+            '    print(f"✓ Audio adjusted to {clip_dur:.2f}s")\n',
+            'else: print("⚠️ Missing files, skipping speed adjustment")\n'
+        ]
+
+    # ── Cell 15: VideoReTalking ──
+    elif '# ── Cell 15: Stage 7 — VideoReTalking Lip Sync' in header:
+        cell['source'] = [
+            '# ── Cell 15: Stage 7 — VideoReTalking Lip Sync ───────────────────────────────\n',
+            'import sys, os, subprocess\n',
+            'if "CLIP" not in globals(): CLIP = "workspace/clip.mp4"\n',
+            'if "TTS_ADJ" not in globals(): TTS_ADJ = "workspace/tts_adjusted.wav"\n',
+            'LIPSYNC = "workspace/lipsync.mp4"\n',
+            '\n',
+            '# Path fixes for VRT\n',
+            'for p in ["VideoReTalking", "VideoReTalking/third_part", "VideoReTalking/third_part/face3d"]:\n',
+            '    path = os.path.abspath(p)\n',
+            '    if path not in sys.path: sys.path.append(path)\n',
+            '\n',
+            'print("Running VideoReTalking (Stage 7)...")\n',
+            'res = subprocess.run([sys.executable, "VideoReTalking/inference.py", "--face", CLIP, "--audio", TTS_ADJ, "--outfile", LIPSYNC, "--checkpoint_dir", "models/VideoReTalking"])\n',
+            '\n',
+            'if res.returncode != 0:\n',
+            '    print("⚠️ VRT failed, falling back to simple mux.")\n',
+            '    get_ipython().system(f"ffmpeg -y -i {CLIP} -i {TTS_ADJ} -map 0:v -map 1:a -c:v copy -shortest {LIPSYNC} -loglevel warning")\n',
+            '\n',
+            'from IPython.display import Video\n',
+            'Video(LIPSYNC, width=640)\n'
+        ]
 
 with open(notebook_path, 'w') as f:
     json.dump(nb, f, indent=4)
 
-print('Successfully fixed supernan_dubbing.ipynb')
+print('Successfully cleaned and fixed supernan_dubbing.ipynb with Golden Cell strategy')
