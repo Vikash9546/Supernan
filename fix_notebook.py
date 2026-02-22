@@ -94,6 +94,17 @@ for cell in nb['cells']:
     if not source:
         continue
     
+    # Check for Cell 3 (Install Python packages)
+    if '# ── Cell 3: Install Python packages' in source[0]:
+        new_source = []
+        for line in source:
+            if 'IndicTransTokenizer.git' in line:
+                # Fix recursive dependency issue by pointing to main/stable branch or ensuring correct install
+                new_source.append(line.replace('IndicTransTokenizer.git', 'IndicTransTokenizer.git@main'))
+            else:
+                new_source.append(line)
+        cell['source'] = new_source
+
     # Check for Cell 5 (VideoReTalking weights)
     if '# ── Cell 5: Download VideoReTalking Weights' in source[0]:
         new_source = []
@@ -108,7 +119,7 @@ for cell in nb['cells']:
     if '# ── Cell 12: Stage 4 — Translate to Hindi (IndicTrans2)' in source[0]:
         new_source = []
         new_source.append('# ── Cell 12: Stage 4 — Translate to Hindi (IndicTrans2) ──────────────────────\n')
-        new_source.append('import torch\n')
+        new_source.append('import torch, os\n')
         new_source.append('if "DEVICE" not in globals():\n')
         new_source.append('    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n')
         new_source.append('\n')
@@ -116,6 +127,11 @@ for cell in nb['cells']:
             if line.startswith('# ── Cell 12'): continue
             line = line.replace('.cuda()', '.to(DEVICE)')
             line = line.replace(".to('cuda')", '.to(DEVICE)')
+            # Ensure HINDI_TEXT is defined with a default if translation fails
+            if 'HINDI_TEXT =' in line and 'translate_indictrans2' in line:
+                new_source.append(line)
+                new_source.append('if HINDI_TEXT is None: HINDI_TEXT = "" # Ensure defined\n')
+                continue
             new_source.append(line)
         cell['source'] = new_source
 
@@ -126,21 +142,15 @@ for cell in nb['cells']:
         new_source.append('import os, re, torch\n')
         new_source.append('from TTS.api import TTS\n')
         new_source.append('\n')
-        new_source.append('# Robust device detection\n')
+        new_source.append('# Robust device and text recovery\n')
         new_source.append('if "DEVICE" not in globals():\n')
         new_source.append('    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n')
-        new_source.append('\n')
-        new_source.append('# Fix for PyTorch 2.6+ UnpicklingError - Monkeypatch torch.load\n')
-        new_source.append('if not hasattr(torch.load, "__supernan_patch__"):\n')
-        new_source.append('    orig_load = torch.load\n')
-        new_source.append('    def zipped_load(*args, **kwargs):\n')
-        new_source.append('        kwargs["weights_only"] = False\n')
-        new_source.append('        return orig_load(*args, **kwargs)\n')
-        new_source.append('    zipped_load.__supernan_patch__ = True\n')
-        new_source.append('    torch.load = zipped_load\n')
-        new_source.append('\n')
-        new_source.append('# Auto-accept Coqui CPML license (non-commercial use)\n')
-        new_source.append('os.environ["COQUI_TOS_AGREED"] = "1"\n')
+        new_source.append('if "HINDI_TEXT" not in globals() or not HINDI_TEXT:\n')
+        new_source.append('    if os.path.exists("workspace/translation_hi.txt"):\n')
+        new_source.append('        with open("workspace/translation_hi.txt", "r", encoding="utf-8") as f: HINDI_TEXT = f.read().strip()\n')
+        new_source.append('        print("✓ HINDI_TEXT recovered from disk")\n')
+        new_source.append('    else:\n')
+        new_source.append('        raise NameError("HINDI_TEXT not found! Please run Cell 12 first.")\n')
         new_source.append('\n')
         new_source.append('TTS_RAW = "workspace/tts_raw.wav"\n')
         
