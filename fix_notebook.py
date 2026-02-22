@@ -104,12 +104,31 @@ for cell in nb['cells']:
                 new_source.append(line)
         cell['source'] = new_source
     
+    # Check for Cell 12 (IndicTrans2)
+    if '# ── Cell 12: Stage 4 — Translate to Hindi (IndicTrans2)' in source[0]:
+        new_source = []
+        new_source.append('# ── Cell 12: Stage 4 — Translate to Hindi (IndicTrans2) ──────────────────────\n')
+        new_source.append('import torch\n')
+        new_source.append('if "DEVICE" not in globals():\n')
+        new_source.append('    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n')
+        new_source.append('\n')
+        for line in source:
+            if line.startswith('# ── Cell 12'): continue
+            line = line.replace('.cuda()', '.to(DEVICE)')
+            line = line.replace(".to('cuda')", '.to(DEVICE)')
+            new_source.append(line)
+        cell['source'] = new_source
+
     # Check for Cell 13 (XTTS)
     if '# ── Cell 13: Stage 5 — Coqui XTTS v2 Voice Cloning' in source[0]:
         new_source = []
         new_source.append('# ── Cell 13: Stage 5 — Coqui XTTS v2 Voice Cloning ──────────────────────────\n')
         new_source.append('import os, re, torch\n')
         new_source.append('from TTS.api import TTS\n')
+        new_source.append('\n')
+        new_source.append('# Robust device detection\n')
+        new_source.append('if "DEVICE" not in globals():\n')
+        new_source.append('    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"\n')
         new_source.append('\n')
         new_source.append('# Fix for PyTorch 2.6+ UnpicklingError - Monkeypatch torch.load\n')
         new_source.append('if not hasattr(torch.load, "__supernan_patch__"):\n')
