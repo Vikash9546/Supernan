@@ -98,10 +98,11 @@ for cell in nb['cells']:
     if '# ── Cell 3: Install Python packages' in source[0]:
         new_source = []
         for line in source:
-            if 'IndicTransTokenizer.git' in line:
-                # Fix recursive dependency issue by pointing to main/stable branch or ensuring correct install
+            if 'IndicTransTokenizer.git' in line and '@main' not in line:
                 new_source.append(line.replace('IndicTransTokenizer.git', 'IndicTransTokenizer.git@main'))
             else:
+                # Cleanup potential duplicates if they already exist
+                if '@main@main' in line: line = line.replace('@main@main', '@main')
                 new_source.append(line)
         cell['source'] = new_source
 
@@ -109,9 +110,11 @@ for cell in nb['cells']:
     if '# ── Cell 5: Download VideoReTalking Weights' in source[0]:
         new_source = []
         for line in source:
-            if '!unzip -q' in line:
+            if '!unzip -q' in line and '-qo' not in line:
                 new_source.append(line.replace('!unzip -q', '!unzip -qo'))
             else:
+                # Cleanup potential duplicates if they already exist
+                if '-qo' in line: line = line.replace('-qo', '-qo').replace('-qoooo', '-qo')
                 new_source.append(line)
         cell['source'] = new_source
     
@@ -152,11 +155,22 @@ for cell in nb['cells']:
             line = line.replace('.cuda()', '.to(DEVICE)')
             line = line.replace(".to('cuda')", '.to(DEVICE)')
             if 'HINDI_TEXT =' in line and 'translate_indictrans2' in line:
+                new_source.append('print("Attempting Hindi translation...")\n')
                 new_source.append(line)
                 new_source.append('if not HINDI_TEXT:\n')
-                new_source.append('    print("⚠️ Translation failed. Using English text for now...")\n')
-                new_source.append('    HINDI_TEXT = ENGLISH_TEXT\n')
+                new_source.append('    print("⚠️ IndicTrans2 failed. Attempting Google Translate fallback...")\n')
+                new_source.append('    try:\n')
+                new_source.append('        from deep_translator import GoogleTranslator\n')
+                new_source.append('        HINDI_TEXT = GoogleTranslator(source="en", target="hi").translate(ENGLISH_TEXT)\n')
+                new_source.append('        print("✓ Google Translate success!")\n')
+                new_source.append('    except Exception as ge:\n')
+                new_source.append('        print(f"❌ Google Translate failed: {ge}. Using English as last resort.")\n')
+                new_source.append('        HINDI_TEXT = ENGLISH_TEXT\n')
                 new_source.append('with open("workspace/translation_hi.txt", "w", encoding="utf-8") as f: f.write(HINDI_TEXT)\n')
+                continue
+            
+            # Skip old redundant checks
+            if any(x in line for x in ['if not HINDI_TEXT:', 'Using English text for now', 'Define even if failed']):
                 continue
             new_source.append(line)
         cell['source'] = new_source
