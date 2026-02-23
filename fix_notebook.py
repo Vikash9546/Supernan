@@ -170,7 +170,15 @@ for cell in nb['cells']:
             'tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(DEVICE)\n',
             '\n',
             'print(f"Synthesizing Hindi audio...")\n',
-            'tts.tts_to_file(text=HINDI_TEXT, speaker_wav=AUDIO_REF, language="hi", file_path=TTS_RAW)\n',
+            'tts.tts_to_file(\n',
+            '    text=HINDI_TEXT,\n',
+            '    speaker_wav=AUDIO_REF,\n',
+            '    language="hi",\n',
+            '    file_path=TTS_RAW,\n',
+            '    temperature=0.7,\n',
+            '    length_penalty=1.0,\n',
+            '    repetition_penalty=2.0\n',
+            ')\n',
             'print(f"✓ Synthesized: {TTS_RAW}")\n'
         ]
 
@@ -198,8 +206,9 @@ for cell in nb['cells']:
             '    ratio = tts_dur / clip_dur\n',
             '    atempo = build_atempo(ratio)\n',
             '    print(f"Adjusting speed (ratio: {ratio:.3f})...")\n',
+            '    # 1. Apply atempo. 2. Pad with silence (apad) to ensure it reaches clip_dur. 3. Crop (-t) to exact clip_dur.\n',
             '    get_ipython().system(f"ffmpeg -y -i {TTS_RAW} -filter:a \'{atempo},apad\' -t {clip_dur} -ar 44100 {TTS_ADJ} -loglevel warning")\n',
-            '    print(f"✓ Audio adjusted to {clip_dur:.2f}s")\n',
+            '    print(f"✓ Audio adjusted and strictly padded to {clip_dur:.2f}s for perfect sync")\n',
             'else: print("⚠️ Missing files, skipping speed adjustment")\n'
         ]
 
