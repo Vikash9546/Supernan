@@ -62,6 +62,3 @@ python dub_video.py --input supernan_training.mp4
 - `workspace/`: Temporary storage for intermediate stages (Denoised Ref, Raw TTS, Clean TTS).
 
 ---
-
-## 📈 Author
-**Vikash Kumar** — Supernan AI Intern Challenge
