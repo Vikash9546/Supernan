@@ -22,15 +22,27 @@ Unlike standard dubbing scripts, this pipeline includes a **4-Pillar Quality Enh
 
 ```mermaid
 graph TD
-    A[Original Video] --> B[FFmpeg: Extract 20s Clip]
-    B --> C[FFmpeg: Denoised Audio Extraction]
-    C --> D[Whisper: High-Accuracy Transcription]
-    D --> E[IndicTrans2: Natural Hindi Translation]
-    E --> F[Smart Splitter & XTTS v2: Voice Cloning]
-    F --> G[Clarity Booster: Professional Filtering]
-    G --> H[Precision Sync: Speed-Locked Alignment]
-    H --> I[VideoReTalking: Robust Lip-Sync]
-    I --> J[Final 20s Premium Hindi Dubbed Video]
+
+Input Video
+   ↓
+FFmpeg Clip Extract
+   ↓
+FFmpeg Audio Extract
+   ↓
+Whisper Transcription ( in English Text )
+   ↓
+IndicTrans2 Translation ( in Hindi Text )
+   ↓
+Coqui XTTS v2 ( Hindi Voice Clone )
+   ↓
+FFmpeg Atempo filter Speed Adjust Audio (match duration exactly)
+   ↓
+VideoReTalking Lip Sync
+   ↓
+GFPGAN Face Enhancement
+   ↓
+Final Output 20 sec video
+
 ```
 
 ---
