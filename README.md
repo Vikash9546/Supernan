@@ -1,20 +1,20 @@
 # 🎬 Supernan AI Dubbing Pipeline
 
-A **high-fidelity, zero-cost** Python pipeline that converts English training videos into professional-grade Hindi-dubbed versions with voice cloning and crystal-clear audio.
+A **high-fidelity, zero-cost** Python pipeline that converts training videos into professional-grade Hindi-dubbed versions with voice cloning and clear audio.
 
 **Built for:** Supernan AI Intern Challenge  
-**Output:** 20-second high-quality dubbed clip with perfect lip-sync and studio-level voice clarity.
+**Output:** 20-second dubbed clip with perfect lip-sync and with voice clarity.
 
 ---
 
-## 💎 Premium Quality Features
+## Quality Features
 
 Unlike standard dubbing scripts, this pipeline includes a **4-Pillar Quality Enhancement Suite**:
 
-1. **🎙️ Crystal Clear Voice Cloning**: Applies adaptive denoising (`afftdn`) and high-pass filtering to the original reference audio for cleaner voice extraction.
-2. **🗣️ Anti-Fumble Smart Splitting**: Uses a conjunction-aware text splitter (handling `और`, `क्योंकि`, `लेकिन`, etc.) to prevent XTTS from fumbling on long Hindi sentences.
-3. **✨ Ultimate Clarity Booster**: Professional FFmpeg audio chain (Equalizer, Treble Boost, Compressor, and Loudnorm) for a "studio" feel.
-4. **🔄 Natural Precision Sync**: Caps speed adjustment at **1.15x** (natural human limit) and uses **Smart Video Padding** (freezing frames) instead of "chipmunk" speed-up if audio is long.
+1. ** Clear Voice Cloning**: Applies adaptive denoising (`afftdn`) and high-pass filtering to the original reference audio for cleaner voice extraction.
+2. ** Anti-Fumble Smart Splitting**: Uses a conjunction-aware text splitter (handling `और`, `क्योंकि`, `लेकिन`, etc.) to prevent XTTS from fumbling on long Hindi sentences.
+3. ** Clarity Booster**: Professional FFmpeg audio chain (Equalizer, Treble Boost, Compressor, and Loudnorm) for a "studio" feel.
+4. ** Natural Precision Sync**: Caps speed adjustment at **1.15x** (natural human limit) and uses **Smart Video Padding** (freezing frames) instead of "chipmunk" speed-up if audio is long.
 
 ---
 
@@ -35,15 +35,15 @@ graph TD
 
 ---
 
-## 🚀 Setup & Usage
+## Setup & Usage
 
-### ☁️ Google Colab (Recommended)
+###  Google Colab (Recommended)
 Open `supernan_dubbing.ipynb` in Colab for free GPU access (T4).
 1. Runtime → Change runtime type → **T4 GPU**.
 2. Run all cells.
 3. **GitHub Ready**: The notebook is optimized to be small in size (outputs cleared) for perfect display on GitHub.
 
-### 💻 Local Setup
+### Local Setup
 ```bash
 chmod +x setup.sh
 ./setup.sh
