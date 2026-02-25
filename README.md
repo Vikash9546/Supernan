@@ -23,13 +23,13 @@ Unlike standard dubbing scripts, this pipeline includes a **4-Pillar Quality Enh
 ```mermaid
 graph TD
     A[🎬 Input Video] --> B[🎞️ FFmpeg Clip Extract]
-    B --> C[🔊 FFmpeg Audio Extract]
-    C --> D[📝 Whisper Transcription\nEnglish Text]
-    D --> E[🌐 IndicTrans2 Translation\nHindi Text]
-    E --> F[🎙️ Coqui XTTS v2\nHindi Voice Clone]
-    F --> G[⏱️ FFmpeg Atempo Filter\nSpeed Adjust Audio — match duration exactly]
-    G --> H[👄 VideoReTalking\nLip Sync]
-    H --> I[✨ GFPGAN\nFace Enhancement]
+    B --> C[ FFmpeg Audio Extract]
+    C --> D[ Whisper Transcription (audio - English Text)]
+    D --> E[ IndicTrans2 Translation (English Text - Hindi Text)]
+    E --> F[ Coqui XTTS v2 (Hindi Voice Clone)]
+    F --> G[ FFmpeg Atempo Filter Speed Adjust Audio — match duration exactly]
+    G --> H[ VideoReTalking (Lip Sync)]
+    H --> I[✨ GFPGAN (Face Enhancement)]
     I --> J[🎬 Final Output — 20 sec Video]
 ```
 
