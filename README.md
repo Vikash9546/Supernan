@@ -20,9 +20,6 @@ Unlike standard dubbing scripts, this pipeline includes a **4-Pillar Quality Enh
 
 ## 🛠️ Pipeline Architecture
 
-```mermaid
-graph TD
-
 Input Video
    ↓
 FFmpeg Clip Extract
@@ -42,8 +39,6 @@ VideoReTalking Lip Sync
 GFPGAN Face Enhancement
    ↓
 Final Output 20 sec video
-
-```
 
 ---
 
